@@ -1,15 +1,7 @@
 version: 0.2
 
-env:
-  parameter-store:
-    DOCKER_REGISTRY_USERNAME: /myapp/docker-credentials/username
-    DOCKER_REGISTRY_PASSWORD: /myapp/docker-credentials/password
-    DOCKER_REGISTRY_URL: /myapp/docker-registry/url
-
 phases:
   install:
-    runtime-versions:
-      nodejs: 18
     commands:
       - echo Installing dependencies
 
@@ -17,8 +9,13 @@ phases:
     commands:
       - echo Logging in to Docker Registry...
       - echo "$DOCKER_REGISTRY_PASSWORD" | docker login -u "$DOCKER_REGISTRY_USERNAME" --password-stdin "$DOCKER_REGISTRY_URL"
+
       - export IMAGE_REPO_NAME="tws-online-shop-app-demo"
       - export IMAGE_NAME="$DOCKER_REGISTRY_USERNAME/$IMAGE_REPO_NAME"
+
+      # 🔑 IMPORTANT FIX: Disable Docker BuildKit
+      - export DOCKER_BUILDKIT=0
+
       - echo "Image name is $IMAGE_NAME"
 
   build:
@@ -30,8 +27,3 @@ phases:
     commands:
       - echo Build completed on `date`
       - docker push $IMAGE_NAME:latest
-      - printf '{"ImageURI":"%s","Port":8000}' $IMAGE_NAME:latest > imageDefinitions.json
-
-artifacts:
-  files:
-    - imageDefinitions.json
